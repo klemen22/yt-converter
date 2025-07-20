@@ -1,22 +1,45 @@
 body {
-    margin: 0;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
-#convert_section{
-    display: flex;
+#convert_section {
+  display: flex;
 }
 
 #convert_section input,
 #convert_section select,
-#convert_section button{
-    margin-right: 10px;
+#convert_section button {
+  margin-right: 10px;
 }
 
-#page_title{
-    margin-bottom: 40px;
+#page_title {
+  margin-bottom: 40px;
+}
+
+.bottomBar {
+  background-color: #444;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  padding-top: 10px;
+  padding-left: 20px;
+  padding-bottom: 10px;
+}
+
+.dropDownMenu {
+  background-color: #444;
+  color: #fff;
+  border-radius: 5px;
+  border-color: #444;
+  border-width: 0px;
+  cursor: pointer;
+}
+
+#invalid_link {
+  margin-top: 5px;
 }
