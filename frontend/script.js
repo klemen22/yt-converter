@@ -11,6 +11,7 @@ const submitButton = document.getElementById("submit_button");
 const downloadButton = document.getElementById("download_button");
 const ytURL = document.getElementById("yt_url");
 const invalidLinkFeedback = document.getElementById("invalid_link");
+const baseURL = `${window.location.protocol}//${window.location.hostname}:8000`;
 
 document.addEventListener("DOMContentLoaded", () => {
   let downloadUrl = null;
@@ -84,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
     results.textContent = "Converting...";
 
     try {
-      const response = await fetch("http://localhost:8000/api/convert", {
+      const response = await fetch(`${baseURL}/api/convert`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -105,7 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
         submitButton.hidden = true;
 
         downloadButton.addEventListener("click", async () => {
-          const downloadLink = `http://localhost:8000/api/download/${encodeURIComponent(
+          const downloadLink = `${baseURL}/api/download/${encodeURIComponent(
             data.filename
           )}`;
           downloadButton.disabled = true;
@@ -140,9 +141,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // send signal to backend to delete the file
             await fetch(
-              `http://localhost:8000/api/delete/${encodeURIComponent(
-                data.filename
-              )}`,
+              `${baseURL}/api/delete/${encodeURIComponent(data.filename)}`,
               {
                 method: "DELETE",
               }
@@ -165,7 +164,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function downloadLogs() {
   logsLink.disabled = true;
-  const resposne = await fetch("http://localhost:8000/api/logs");
+  const resposne = await fetch(`${baseURL}/api/logs`);
   const blob = await resposne.blob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -186,7 +185,7 @@ async function downloadLogs() {
 
 async function showStatsToast() {
   try {
-    const response = await fetch("http://localhost:8000/api/stats");
+    const response = await fetch(`${baseURL}/api/stats`);
     if (response.ok == false) {
       throw new Error("Error while fetching server stats!");
     }

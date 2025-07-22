@@ -98,3 +98,7 @@ body {
 .slide-in {
   animation: show 0.6s ease 1 forwards;
 }
+
+#convert_result {
+  margin-top: 5px;
+}
