@@ -4,7 +4,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from yt_dlp import YoutubeDL
 from fastapi.responses import FileResponse
 import os
+import threading
+import time
+from database import initializeDB, saveConversion, getLogs, getStats
 
+initializeDB()
 app = FastAPI()
 
 app.add_middleware(
@@ -58,6 +62,8 @@ async def convertVideo(payload: request):
             filename = ydl.prepare_filename(info)
             if payload.format == "mp3":
                 filename = filename.rsplit(".", 1)[0] + ".mp3"
+            # save logs
+            saveConversion(filename, payload.format)
         return {
             "status": "success",
             "message": "Download complete",
@@ -84,9 +90,64 @@ async def deleteFile(filename: str):
     filePath = os.path.join(downloadDir, filename)
     try:
         if os.path.exists(filePath):
-            os.unlink(filePath)
+            os.remove(filePath)
             return {"status": "deleted"}
         else:
             return {"status": "not found"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+
+@app.get("/api/logs")
+def downloadLogs():
+    try:
+        logs = getLogs()
+        logsFilePath = "downloads/logs.txt"
+        with open(logsFilePath, "w", encoding="utf-8") as temp:
+            for row in logs:
+                temp.write(f"{row}\n")
+        return FileResponse(
+            path=logsFilePath, filename="logs.txt", media_type="text/plain"
+        )
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.get("/api/stats")
+def downloadStats():
+    try:
+        stats = getStats()
+        return {
+            "status": "success",
+            "total_conversions": stats[1],
+            "number_of_mp3": stats[2],
+            "number_of_mp4": stats[3],
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+def deleteGarbage():
+    # on set interval delete all files / leftovers in downloads folder
+
+    while True:
+        startInt = time.time()
+        endInt = startInt - 30 * 60  # clean up on half an hour intervals
+
+        filesList = os.listdir(downloadDir)
+
+        for file in filesList:
+            filePath = os.path.join(downloadDir, file)
+            if os.path.isfile(filePath):
+                if os.path.getatime(filePath) < endInt:
+                    try:
+                        os.remove(filePath)
+                        print(f"Deleted old file: {file}")
+                    except Exception as e:
+                        print(f"Error deleting {file}: {e}")
+
+        time.sleep(600)  # check every 5 min
+
+
+# start new thread
+threading.Thread(target=deleteGarbage, daemon=True).start()

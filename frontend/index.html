@@ -6,57 +6,69 @@
     <title>Youtube Converter</title>
     <link rel="stylesheet" href="bootstrap.min.css" />
     <link rel="stylesheet" href="style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    />
   </head>
 
   <body>
-    <h1 id="page_title">YouTube Converter</h1>
-    <div class="container">
-      <div id="convert_section" novalidate>
-        <input
-          class="form-control"
-          type="text"
-          id="yt_url"
-          placeholder="Paste YouTube link here..."
-        />
-        <select id="convert_format" class="dropDownMenu">
-          <option value="mp3">MP3</option>
-          <option value="mp4">MP4</option>
-        </select>
-        <select id="convert_resolution" class="dropDownMenu">
-          <option value="144">144p</option>
-          <option value="480">480p</option>
-          <option value="720">720p</option>
-          <option value="1080">1080p</option>
-        </select>
-        <button type="button" class="btn btn-secondary" id="submit_button">
-          Convert
-        </button>
-        <button
-          class="btn btn-secondary"
-          id="download_button"
-          type="button"
-          hidden
-        >
-          Download
-        </button>
+    <div id="main_wrapper">
+      <h1 id="page_title">YouTube Converter</h1>
+      <div class="container">
+        <div id="convert_section" novalidate>
+          <input
+            class="form-control"
+            type="text"
+            id="yt_url"
+            placeholder="Paste YouTube link here..."
+          />
+          <select id="convert_format" class="dropDownMenu">
+            <option value="mp3">MP3</option>
+            <option value="mp4">MP4</option>
+          </select>
+          <select id="convert_resolution" class="dropDownMenu">
+            <option value="144">144p</option>
+            <option value="480">480p</option>
+            <option value="720">720p</option>
+            <option value="1080">1080p</option>
+          </select>
+          <button type="button" class="btn btn-secondary" id="submit_button">
+            Convert
+          </button>
+          <button
+            class="btn btn-secondary"
+            id="download_button"
+            type="button"
+            hidden
+          >
+            Download
+          </button>
+        </div>
+        <p class="text-danger" id="invalid_link">Invalid link!</p>
       </div>
-      <p class="text-danger" id="invalid_link">Invalid link!</p>
-    </div>
-    <div id="convert_result">Done!</div>
+      <div id="convert_result">Done!</div>
 
-    <div class="bottomBar">
-      <ul class="nav nav-underline">
-        <li class="nav-item">
-          <a class="nav-link" aria-current="page" href="#">Active</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="#">Link</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="#">Link</a>
-        </li>
-      </ul>
+      <div class="bottomBar">
+        <ul class="nav nav-underline">
+          <li class="nav-item">
+            <a class="nav-link" href="#" id="stats_link">Stats</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" id="logs_link">Logs</a>
+          </li>
+        </ul>
+      </div>
     </div>
+
+    <div id="toast_container" hidden>
+      <div class="toast_content">
+        <h5 class="text-body" id="toast_title">Toast title</h5>
+        <div class="text-secondary" id="toast_body">Toast message</div>
+      </div>
+      <i class="fa-solid fa-xmark" id="x_mark"></i>
+    </div>
+
     <script type="text/javascript" src="script.js"></script>
   </body>
 </html>

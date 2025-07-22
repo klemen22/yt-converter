@@ -1,5 +1,8 @@
 body {
   margin: 0;
+}
+
+#main_wrapper {
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -42,4 +45,56 @@ body {
 
 #invalid_link {
   margin-top: 5px;
+}
+
+#toast_container {
+  position: fixed;
+  background-color: #444;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 10px;
+  grid-template-columns: 200px 70px;
+  z-index: 9999;
+  border-radius: 5px;
+  box-shadow: 0 0 6px #ffffffbf;
+}
+
+.toast_content {
+  padding: 10px;
+  width: 300px;
+}
+
+#x_mark {
+  padding: 4px;
+  cursor: pointer;
+  color: #fff;
+}
+
+@keyframes show {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-10%);
+  }
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+    transform: translateX(-10%);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+.fade-out {
+  animation: fadeOut 0.6s ease forwards;
+}
+
+.slide-in {
+  animation: show 0.6s ease 1 forwards;
 }

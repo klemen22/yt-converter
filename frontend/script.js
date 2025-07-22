@@ -1,12 +1,18 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const formatSelect = document.getElementById("convert_format");
-  const resolutionSelect = document.getElementById("convert_resolution");
-  const results = document.getElementById("convert_result");
-  const submitButton = document.getElementById("submit_button");
-  const downloadButton = document.getElementById("download_button");
-  const ytURL = document.getElementById("yt_url");
-  const invalidLinkFeedback = document.getElementById("invalid_link");
+const logsLink = document.getElementById("logs_link");
+const statsLink = document.getElementById("stats_link");
+const toastContainer = document.getElementById("toast_container");
+const toastTitle = document.getElementById("toast_title");
+const toastBody = document.getElementById("toast_body");
+const xMark = document.getElementById("x_mark");
+const formatSelect = document.getElementById("convert_format");
+const resolutionSelect = document.getElementById("convert_resolution");
+const results = document.getElementById("convert_result");
+const submitButton = document.getElementById("submit_button");
+const downloadButton = document.getElementById("download_button");
+const ytURL = document.getElementById("yt_url");
+const invalidLinkFeedback = document.getElementById("invalid_link");
 
+document.addEventListener("DOMContentLoaded", () => {
   let downloadUrl = null;
   let filename = null;
   formatSelect.value = "mp3";
@@ -17,6 +23,9 @@ document.addEventListener("DOMContentLoaded", () => {
   submitButton.disabled = false;
   downloadButton.disabled = false;
   results.hidden = true;
+  logsLink.disabled = false;
+  toastContainer.classList.remove("slide-in");
+  toastContainer.classList.remove("fade-out");
 
   if (ytURL.classList.contains("is-invalid")) {
     ytURL.classList.remove("is-invalid");
@@ -26,6 +35,14 @@ document.addEventListener("DOMContentLoaded", () => {
   formatSelect.addEventListener("change", () => {
     resolutionSelect.hidden = formatSelect.value !== "mp4";
   });
+
+  logsLink.addEventListener("click", downloadLogs);
+  statsLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    showStatsToast();
+  });
+
+  xMark.addEventListener("click", hideToast);
 
   submitButton.addEventListener("click", async (event) => {
     event.preventDefault();
@@ -88,7 +105,9 @@ document.addEventListener("DOMContentLoaded", () => {
         submitButton.hidden = true;
 
         downloadButton.addEventListener("click", async () => {
-          const downloadLink = `http://localhost:8000/api/download/${data.filename}`;
+          const downloadLink = `http://localhost:8000/api/download/${encodeURIComponent(
+            data.filename
+          )}`;
           downloadButton.disabled = true;
           results.textContent = "Downloading...";
 
@@ -120,9 +139,14 @@ document.addEventListener("DOMContentLoaded", () => {
             formatSelect.disabled = false;
 
             // send signal to backend to delete the file
-            await fetch(`http://localhost:8000/api/delete/${data.filename}`, {
-              method: "DELETE",
-            });
+            await fetch(
+              `http://localhost:8000/api/delete/${encodeURIComponent(
+                data.filename
+              )}`,
+              {
+                method: "DELETE",
+              }
+            );
           } catch (error) {
             console.error("Download error: ", error);
             results.textContent = "Error while downloading the file!";
@@ -138,3 +162,72 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
+async function downloadLogs() {
+  logsLink.disabled = true;
+  const resposne = await fetch("http://localhost:8000/api/logs");
+  const blob = await resposne.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+
+  a.href = url;
+  a.download = "logs.txt";
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  await fetch("http://localhost:8000/api/delete/logs.txt", {
+    method: "DELETE",
+  });
+  logsLink.disabled = false;
+}
+
+async function showStatsToast() {
+  try {
+    const response = await fetch("http://localhost:8000/api/stats");
+    if (response.ok == false) {
+      throw new Error("Error while fetching server stats!");
+    }
+    const stats = await response.json();
+    toastTitle.textContent = "Page stats";
+    toastBody.innerHTML = `
+      Total conversions: ${stats.total_conversions}
+      &nbsp;&nbsp;&nbsp;&nbsp;MP3: ${stats.number_of_mp3}
+      &nbsp;&nbsp;&nbsp;&nbsp;MP4: ${stats.number_of_mp4}`;
+    showToast();
+    setTimeout(() => {
+      hideToast();
+    }, 5000);
+  } catch (error) {
+    toastTitle.textContent = "Error";
+    toastBody.textContent = "Could not load stats!";
+    console.error(error);
+    showToast();
+    setTimeout(() => {
+      hideToast();
+    }, 5000);
+  }
+}
+
+function showToast() {
+  toastContainer.hidden = false;
+  toastContainer.classList.remove("fade-out");
+  toastContainer.classList.add("slide-in");
+}
+
+function hideToast() {
+  toastContainer.classList.remove("slide-in");
+  toastContainer.classList.remove("fade-out");
+  toastContainer.classList.add("fade-out");
+
+  toastContainer.addEventListener(
+    "animationend",
+    () => {
+      toastContainer.hidden = true;
+      toastContainer.classList.remove("fade-out");
+    },
+    { once: true }
+  );
+}
