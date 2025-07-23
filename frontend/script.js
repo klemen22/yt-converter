@@ -1,3 +1,7 @@
+//-----------------------------------------------------------------------------------//
+//                                  DOM Elements                                     //
+//-----------------------------------------------------------------------------------//
+
 const logsLink = document.getElementById("logs_link");
 const statsLink = document.getElementById("stats_link");
 const toastContainer = document.getElementById("toast_container");
@@ -12,10 +16,10 @@ const downloadButton = document.getElementById("download_button");
 const ytURL = document.getElementById("yt_url");
 const invalidLinkFeedback = document.getElementById("invalid_link");
 const baseURL = `${window.location.protocol}//${window.location.hostname}:8000`;
+let downloadUrl = null;
+let filename = null;
 
 document.addEventListener("DOMContentLoaded", () => {
-  let downloadUrl = null;
-  let filename = null;
   formatSelect.value = "mp3";
   resolutionSelect.hidden = true;
   invalidLinkFeedback.hidden = true;
@@ -48,119 +52,147 @@ document.addEventListener("DOMContentLoaded", () => {
   submitButton.addEventListener("click", async (event) => {
     event.preventDefault();
     event.stopPropagation();
+    submitRequest();
+  });
+});
 
-    if (downloadUrl) {
-      window.URL.revokeObjectURL(downloadUrl);
-      downloadUrl = null;
-      filename = null;
-    }
+//-----------------------------------------------------------------------------------//
+//                                   Submit Request                                  //
+//-----------------------------------------------------------------------------------//
 
-    const url = ytURL.value.trim();
-    const format = formatSelect.value;
+async function submitRequest() {
+  if (downloadUrl) {
+    window.URL.revokeObjectURL(downloadUrl);
+    downloadUrl = null;
+    filename = null;
+  }
 
-    if (!url.includes("https://www.youtube.com/")) {
-      ytURL.classList.add("is-invalid");
-      invalidLinkFeedback.hidden = false;
+  const url = ytURL.value.trim();
+  const format = formatSelect.value;
+
+  if (!url.includes("https://www.youtube.com/")) {
+    ytURL.classList.add("is-invalid");
+    invalidLinkFeedback.hidden = false;
+    return;
+  }
+
+  ytURL.classList.remove("is-invalid");
+  invalidLinkFeedback.hidden = true;
+  submitButton.disabled = true;
+  resolutionSelect.disabled = true;
+  formatSelect.disabled = true;
+
+  const payload = {
+    url: url,
+    format: format,
+    resolution: null,
+  };
+
+  if (format == "mp4") {
+    payload.resolution = resolutionSelect.value;
+  }
+
+  console.log(payload);
+  results.hidden = false;
+  results.textContent = "Converting...";
+
+  try {
+    const response = await fetch(`${baseURL}/api/convert`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (response.ok == false) {
+      results.textContent = "Error while sedning data!";
+      console.log("Error while sending data!");
       return;
     }
 
-    ytURL.classList.remove("is-invalid");
-    invalidLinkFeedback.hidden = true;
-    submitButton.disabled = true;
-    resolutionSelect.disabled = true;
-    formatSelect.disabled = true;
+    const data = await response.json();
+    if (data.status == "success") {
+      results.textContent = "Download is ready!";
+      downloadButton.hidden = false;
+      submitButton.hidden = true;
 
-    const payload = {
-      url: url,
-      format: format,
-      resolution: null,
-    };
-
-    if (format == "mp4") {
-      payload.resolution = resolutionSelect.value;
-    }
-
-    console.log(payload);
-    results.hidden = false;
-    results.textContent = "Converting...";
-
-    try {
-      const response = await fetch(`${baseURL}/api/convert`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+      downloadButton.addEventListener("click", async () => {
+        downloadRequest(data);
       });
-
-      if (response.ok == false) {
-        results.textContent = "Error while sedning data!";
-        console.log("Error while sending data!");
-        return;
-      }
-
-      const data = await response.json();
-      if (data.status == "success") {
-        results.textContent = "Download is ready!";
-        downloadButton.hidden = false;
-        submitButton.hidden = true;
-
-        downloadButton.addEventListener("click", async () => {
-          const downloadLink = `${baseURL}/api/download/${encodeURIComponent(
-            data.filename
-          )}`;
-          downloadButton.disabled = true;
-          results.textContent = "Downloading...";
-
-          try {
-            const response = await fetch(downloadLink);
-            if (response.ok == false) {
-              results.textContent = "Error downloading file!";
-              downloadButton.disabled = false;
-              return;
-            }
-            const blob = await response.blob();
-            const objectURL = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            // create an invisible element to signalize when the download of the file is complete
-            a.href = objectURL;
-            a.download = data.filename;
-            a.style.display = "none";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(objectURL);
-
-            results.textContent = "Download finished!";
-            submitButton.disabled = false;
-            submitButton.hidden = false;
-            downloadButton.disabled = false;
-            downloadButton.hidden = true;
-            resolutionSelect.disabled = false;
-            formatSelect.disabled = false;
-
-            // send signal to backend to delete the file
-            await fetch(
-              `${baseURL}/api/delete/${encodeURIComponent(data.filename)}`,
-              {
-                method: "DELETE",
-              }
-            );
-          } catch (error) {
-            console.error("Download error: ", error);
-            results.textContent = "Error while downloading the file!";
-            downloadButton.disabled = false;
-          }
-        });
-      } else {
-        results.textContent = "Error: " + data.message;
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      results.textContent = "Error with backend connection!";
+    } else {
+      results.textContent = "Error: " + data.message;
     }
-  });
-});
+  } catch (error) {
+    console.error("Error:", error);
+    results.textContent = "Error with backend connection!";
+  }
+}
+
+//-----------------------------------------------------------------------------------//
+//                                  Download Request                                 //
+//-----------------------------------------------------------------------------------//
+
+async function downloadRequest(data) {
+  const downloadLink = `${baseURL}/api/download/${encodeURIComponent(
+    data.filename
+  )}`;
+  downloadButton.disabled = true;
+  results.textContent = "Downloading...";
+
+  try {
+    const response = await fetch(downloadLink, {
+      cache: "no-store",
+      headers: {
+        "Cache-Control": "no-cache",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    });
+
+    if (response.ok == false) {
+      results.textContent = "Error downloading file!";
+      downloadButton.disabled = false;
+      return;
+    }
+    const blob = await response.blob();
+    const objectURL = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    // create an invisible element to signalize when the download of the file is complete
+    a.href = objectURL;
+    a.download = data.filename;
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(objectURL);
+
+    results.textContent = "Download finished!";
+    submitButton.disabled = false;
+    submitButton.hidden = false;
+    downloadButton.disabled = false;
+    downloadButton.hidden = true;
+    resolutionSelect.disabled = false;
+    formatSelect.disabled = false;
+
+    // send signal to backend to delete the file
+    await fetch(`${baseURL}/api/delete/${encodeURIComponent(data.filename)}`, {
+      method: "DELETE",
+    });
+    window.location.reload();
+  } catch (error) {
+    console.error("Download error: ", error);
+    results.textContent = "Error while downloading the file!";
+    downloadButton.disabled = false;
+  }
+}
+
+//-----------------------------------------------------------------------------------//
+//                                    Download logs                                  //
+//-----------------------------------------------------------------------------------//
 
 async function downloadLogs() {
   logsLink.disabled = true;
@@ -182,6 +214,10 @@ async function downloadLogs() {
   });
   logsLink.disabled = false;
 }
+
+//-----------------------------------------------------------------------------------//
+//                                      Toast                                        //
+//-----------------------------------------------------------------------------------//
 
 async function showStatsToast() {
   try {
