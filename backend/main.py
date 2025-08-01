@@ -65,6 +65,7 @@ async def convertVideo(payload: request):
             "no_cache_dir": True,
             "cachedir": False,
             "nopart": True,
+            "noplaylist": True,
         }
 
     elif payload.format == "mp4":
@@ -79,6 +80,7 @@ async def convertVideo(payload: request):
             "no_cache_dir": True,
             "cachedir": False,
             "nopart": True,
+            "noplaylist": True,
         }
 
     try:
